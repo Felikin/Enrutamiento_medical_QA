@@ -1,26 +1,48 @@
+# src/data_loader.py
+
+import pandas as pd
 import xml.etree.ElementTree as ET
 
-def leer_archivo_xml(archivo):
-    """
-    Lee un archivo XML y devuelve una lista de tuplas de preguntas y respuestas.
-    """
-    preguntas_respuestas = []
-    tree = ET.parse(archivo)
+def load_data(filepath):
+    # Parse XML file
+    tree = ET.parse(filepath)
     root = tree.getroot()
-    for child in root:
-        pregunta = child.find('Original-Question/MESSAGE').text.strip()
-        respuesta = child.find('ReferenceAnswers/ReferenceAnswer/ANSWER').text.strip()
-        preguntas_respuestas.append((pregunta, respuesta))
-    return preguntas_respuestas
 
-# Ruta al archivo XML de entrenamiento
-archivo_entrenamiento = 'data/TrainingDatasets/TREC-2017-LiveQA-Medical-Train-1.xml'
+    # Extract data into DataFrame
+    data = []
+    for question in root.findall('.//NLM-QUESTION'):
+        question_id = question.get('questionid')
+        subject_elem = question.find('SUBJECT')
+        message_elem = question.find('MESSAGE')
 
-# Leer el archivo XML y obtener las preguntas y respuestas
-if __name__ == "__main__":
-    preguntas_respuestas = leer_archivo_xml(archivo_entrenamiento)
-    # Imprimir las primeras 5 preguntas y respuestas como ejemplo
-    for idx, (pregunta, respuesta) in enumerate(preguntas_respuestas[:5], start=1):
-        print(f"Pregunta {idx}: {pregunta}")
-        print(f"Respuesta {idx}: {respuesta}")
-        print("="*50)
+        # Handle cases where SUBJECT or MESSAGE tags are missing or empty
+        subject = subject_elem.text.strip() if subject_elem is not None and subject_elem.text is not None else ''
+        message = message_elem.text.strip() if message_elem is not None and message_elem.text is not None else ''
+
+        # Extract subquestions
+        for subquestion in question.findall('.//SUB-QUESTION'):
+            subquestion_id = subquestion.get('subqid')
+            focus_elem = subquestion.find('.//FOCUS')
+            type_elem = subquestion.find('.//TYPE')
+
+            focus = focus_elem.text.strip() if focus_elem is not None and focus_elem.text is not None else ''
+            type_ = type_elem.text.strip() if type_elem is not None and type_elem.text is not None else ''
+
+            # Extract answers
+            for answer in subquestion.findall('.//ANSWER'):
+                answer_id = answer.get('answerid')
+                answer_text = answer.text.strip() if answer.text is not None else ''
+
+                data.append({
+                    'QuestionID': question_id,
+                    'Subject': subject,
+                    'Message': message,
+                    'SubQuestionID': subquestion_id,
+                    'Focus': focus,
+                    'Type': type_,
+                    'AnswerID': answer_id,
+                    'Answer': answer_text
+                })
+
+    df = pd.DataFrame(data)
+    return df
