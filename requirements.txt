@@ -6,3 +6,5 @@ requests
 jupyter
 seaborn
 wordcloud
+transformers
+torch
