@@ -40,5 +40,7 @@ def parse_xml(file_path):
     
     return pd.DataFrame(data)
 
-def load_data(file_path):
-    return parse_xml(file_path)
+def load_data(file_paths):
+    dataframes = [parse_xml(file_path) for file_path in file_paths]
+    combined_df = pd.concat(dataframes, ignore_index=True)
+    return combined_df
