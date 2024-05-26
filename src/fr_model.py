@@ -13,7 +13,6 @@ def load_ner_model():
 
 def extract_entities(pregunta):
   pipeline = load_ner_model()
-  #pregunta = pregunta.tolist()
   # Aplicación del modelo a cada pregunta
   resultados = []
   entities = pipeline(pregunta, aggregation_strategy= "simple")
