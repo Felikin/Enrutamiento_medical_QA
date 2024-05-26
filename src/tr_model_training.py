@@ -56,10 +56,12 @@ def train_classification_model(train_data):
     # Configuración del entrenamiento
     training_args = TrainingArguments(
         output_dir=output_dir,
-        num_train_epochs=1,
-        per_device_train_batch_size=8,
-        warmup_steps=500,
+        num_train_epochs=10,
+        per_device_train_batch_size=16,
+        save_steps=500,
+        warmup_steps=100,
         weight_decay=0.01,
+        learning_rate=0.00005,
         logging_dir='./logs',
     )
 
