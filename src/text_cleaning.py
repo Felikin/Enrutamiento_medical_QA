@@ -6,9 +6,9 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
 # Asegúrate de tener descargado el corpus necesario
-nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('punkt')
+#nltk.download('stopwords')
+#nltk.download('wordnet')
+#nltk.download('punkt')
 
 lemmatizer = WordNetLemmatizer()
 stop_words = set(stopwords.words('english'))
