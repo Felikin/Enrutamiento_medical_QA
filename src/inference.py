@@ -1,48 +1,67 @@
 import sys
 import os
-
-# Añadir el directorio del proyecto al sys.path
+import pandas as pd
+import re
+# Asegúrate de que el directorio `src` esté en el `PYTHONPATH`
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.model_training import load_biomedbert_model, classify_question, extract_entities
+from src.tr_model_training import load_classification_model, train_classification_model, classify_question
+from src.fr_model import extract_entities
 from src.data_preparation import load_data
-import pandas as pd
 
-def enrutador_de_preguntas(pregunta, tokenizer, model, data, categorias):
-    categoria_id = classify_question(model, tokenizer, pregunta)
-    categoria = categorias[categoria_id]
 
-    # Filtrar respuestas relevantes de la base de datos
-    respuestas_relevantes = data[data['type'].apply(lambda x: categoria in x)]
-    # Extraer entidades (enfoques) de la pregunta
-    enfoques = extract_entities(pregunta, tokenizer, model)
+def enrutador_de_preguntas(pregunta, tokenizer_classification, model_classification, train_data, label_encoder):
+    # Clasificar la pregunta
+    categoria = classify_question(pregunta, tokenizer_classification, model_classification, label_encoder)
     
-    # Filtrar aún más las respuestas por enfoque
-    respuestas_filtradas = respuestas_relevantes[respuestas_relevantes['focus'].apply(lambda x: any(focus in enfoques for focus in x))]
-    
-    # Seleccionar la primera respuesta relevante como ejemplo
-    if not respuestas_filtradas.empty:
-        respuesta = respuestas_filtradas.iloc[0]['answer_text']
+    # Extraer entidades
+    enfoque = extract_entities(pregunta)
+    enfoque = enfoque[0]["word"]
+    enfoque = re.sub(r'^\s', "", enfoque)
+    # Filtrar respuestas posibles
+    if  enfoque and categoria:
+        respuestas_posibles = train_data[train_data["focus"]==enfoque]
+        if (len(respuestas_posibles[respuestas_posibles["type"]==categoria[0]])>0):
+            respuestas_posibles = respuestas_posibles[respuestas_posibles["type"]==categoria[0]]
+    elif categoria and not enfoque:
+        respuestas_posibles = train_data[train_data["type"]==categoria[0]]
+    elif enfoque and not categoria:
+        respuestas_posibles = train_data[train_data["focus"]==enfoque]
     else:
-        respuesta = "No se encontró una respuesta adecuada para esta pregunta."
-        
-    return respuesta
+        respuestas_posibles = "no tenemos respuestas para sugerirte"
+    return respuestas_posibles["answer"]
 
 def main():
-    data_paths = [
-        'data/TrainingDatasets/TREC-2017-LiveQA-Medical-Train-1.xml',
-        'data/TrainingDatasets/TREC-2017-LiveQA-Medical-Train-2.xml'
-    ]
+    # Definir la ruta del directorio del modelo clasificador
+    class_model = './results/classifier'
+    # Cargar los datos de entrenamiento
+    data_paths = ['data/TrainingDatasets/TREC-2017-LiveQA-Medical-Train-1.xml', 'data/TrainingDatasets/TREC-2017-LiveQA-Medical-Train-2.xml']
     train_data = load_data(data_paths)
+
+    # Verificar si el modelo guardado existe
+    if not os.path.exists(class_model):
+        os.makedirs(class_model)
     
-    # Extraer categorías únicas
-    categorias = train_data["type"].unique()
-    # Cargar modelo y tokenizer
-    tokenizer, model = load_biomedbert_model(num_labels=len(categorias))
-    
-    # Ejemplo de uso
-    pregunta = "What are the symptoms and treatment options for hypothyroidism?"
-    respuesta = enrutador_de_preguntas(pregunta, tokenizer, model, train_data, categorias)
-    print(respuesta)
+    model_files_exist = (
+        os.path.exists(os.path.join(class_model, 'model.safetensors')) and
+        os.path.exists(os.path.join(class_model, 'tokenizer.json')) and
+        os.path.exists(os.path.join(class_model, 'label_encoder.pkl'))
+    )
+
+    if not model_files_exist:
+        # Si el modelo no está disponible, entrenar el modelo
+        print("Modelo no encontrado. Entrenando el modelo...")
+        classification_model, classification_tokenizer, label_encoder = train_classification_model(train_data)
+    else:
+        # Cargar el modelo guardado
+        print("Cargando el modelo guardado...")
+        classification_model, classification_tokenizer, label_encoder = load_classification_model(class_model)
+
+    # Ejemplo de uso del enrutador
+    pregunta = "how many miligrams of ibuprophen per kilogram should I take for fever?"
+    respuesta = enrutador_de_preguntas(pregunta, classification_tokenizer, classification_model, train_data, label_encoder)
+    print(f"Pregunta: {pregunta}")
+    print(f"Respuestas posibles: {respuesta}")
+
 if __name__ == "__main__":
     main()
