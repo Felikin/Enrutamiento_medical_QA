@@ -72,7 +72,7 @@ Este proyecto es una implementación de un sistema de Preguntas y Respuestas Mé
 - **Interacción con el Usuario:** Diseño de mecanismos para recolectar retroalimentación del usuario para futuras mejoras del modelo.
 
 ## Estructura del Proyecto
-
+```sh
 Enrutamiento_medical_QA/
 ├── app/
 │ ├── init.py
@@ -99,7 +99,7 @@ Enrutamiento_medical_QA/
 ├── run.py
 ├── requirements.txt
 └── README.md
-
+```
 ## Uso del Producto
 
 ### Requisitos Previos
