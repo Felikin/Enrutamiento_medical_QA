@@ -10,28 +10,7 @@ from src.fr_model import extract_entities
 from src.data_preparation import load_data
 
 
-def enrutador_de_preguntas(pregunta, tokenizer_classification, model_classification, train_data, label_encoder):
-    # Clasificar la pregunta
-    categoria = classify_question(pregunta, tokenizer_classification, model_classification, label_encoder)
-    
-    # Extraer entidades
-    enfoque = extract_entities(pregunta)
-    enfoque = enfoque[0]["word"]
-    enfoque = re.sub(r'^\s', "", enfoque)
-    # Filtrar respuestas posibles
-    if  enfoque and categoria:
-        respuestas_posibles = train_data[train_data["focus"]==enfoque]
-        if (len(respuestas_posibles[respuestas_posibles["type"]==categoria[0]])>0):
-            respuestas_posibles = respuestas_posibles[respuestas_posibles["type"]==categoria[0]]
-    elif categoria and not enfoque:
-        respuestas_posibles = train_data[train_data["type"]==categoria[0]]
-    elif enfoque and not categoria:
-        respuestas_posibles = train_data[train_data["focus"]==enfoque]
-    else:
-        respuestas_posibles = "no tenemos respuestas para sugerirte"
-    return respuestas_posibles["answer"]
-
-def main():
+def enrutador_de_preguntas(pregunta):
     # Definir la ruta del directorio del modelo clasificador
     class_model = './results/classifier'
     # Cargar los datos de entrenamiento
@@ -57,9 +36,30 @@ def main():
         print("Cargando el modelo guardado...")
         classification_model, classification_tokenizer, label_encoder = load_classification_model(class_model)
 
+    # Clasificar la pregunta
+    categoria = classify_question(pregunta, classification_tokenizer, classification_model, label_encoder)
+    
+    # Extraer entidades
+    enfoque = extract_entities(pregunta)
+    enfoque = enfoque[0]["word"]
+    enfoque = re.sub(r'^\s', "", enfoque)
+    # Filtrar respuestas posibles
+    if  enfoque and categoria:
+        respuestas_posibles = train_data[train_data["focus"]==enfoque]
+        if (len(respuestas_posibles[respuestas_posibles["type"]==categoria[0]])>0):
+            respuestas_posibles = respuestas_posibles[respuestas_posibles["type"]==categoria[0]]
+    elif categoria and not enfoque:
+        respuestas_posibles = train_data[train_data["type"]==categoria[0]]
+    elif enfoque and not categoria:
+        respuestas_posibles = train_data[train_data["focus"]==enfoque]
+    else:
+        respuestas_posibles = "no tenemos respuestas para sugerirte"
+    return respuestas_posibles["answer"], categoria[0], enfoque
+
+def main():
     # Ejemplo de uso del enrutador
-    pregunta = "how many miligrams of ibuprophen per kilogram should I take for fever?"
-    respuesta = enrutador_de_preguntas(pregunta, classification_tokenizer, classification_model, train_data, label_encoder)
+    pregunta = "What treatment should I give in a case of migraine?"
+    respuesta = enrutador_de_preguntas(pregunta)
     print(f"Pregunta: {pregunta}")
     print(f"Respuestas posibles: {respuesta}")
 
