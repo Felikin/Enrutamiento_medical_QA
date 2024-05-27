@@ -1,3 +1,5 @@
 src/__pycache__/
 notebooks/.ipynb_checkpoints/
 results/
+app/__pycache__
+metrics.log
