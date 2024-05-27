@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Enrutador de Preguntas Médicas</h1>
+<form action="/ask" method="post">
+    <label for="pregunta">Introduce tu pregunta:</label><br>
+    <input type="text" id="pregunta" name="pregunta" required><br>
+    <input type="submit" value="Enviar">
+</form>
+{% endblock %}

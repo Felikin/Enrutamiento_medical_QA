@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Resultado</h1>
+<p><strong>Pregunta:</strong> {{ pregunta }}</p>
+<p><strong>Categoría:</strong> {{ categoria }}</p>
+<p><strong>Enfoque:</strong> {{ enfoque }}</p>
+<p><strong>Respuesta:</strong> {{ respuesta }}</p>
+<p><strong>Tiempo de Respuesta:</strong> {{ tiempo_respuesta }} segundos</p>
+
+<h2>Feedback</h2>
+<form action="/feedback" method="post">
+    <label for="satisfaccion">¿Estás satisfecho con la respuesta?</label><br>
+    <select id="satisfaccion" name="satisfaccion" required>
+        <option value="si">Sí</option>
+        <option value="no">No</option>
+    </select><br>
+    <input type="submit" value="Enviar">
+</form>
+{% endblock %}
